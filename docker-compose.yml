@@ -1,0 +1,59 @@
+version: '3'
+
+networks:
+    nginx-php74-postgres12-node:
+
+services:
+
+    # nginx
+    nginx-service:
+        image: nginx:stable-alpine
+        container_name: nginx-container
+        ports:
+            - "8080:80"
+        volumes:
+            - ./app:/var/www/project
+            - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+        depends_on:
+            - php74-service
+            - postgres11-service
+        networks:
+            - nginx-php74-postgres12-node
+
+    # php
+    php74-service:
+        build:
+            context: .
+            dockerfile: ./docker/php/Dockerfile
+        container_name: php74-container
+        ports:
+            - "9000:9000"
+        volumes:
+            - ./app:/var/www/project
+        networks:
+            - nginx-php74-postgres12-node
+
+    # postgres
+    postgres11-service:
+        image: postgres:11-alpine
+        container_name: postgres11-container
+        ports:
+            - "5432:5432"
+        volumes:
+            - ./docker/postgres:/var/lib/postgresql/data
+        restart: always
+        environment:
+            - "POSTGRES_USER=${POSTGRES_USER}"
+            - "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}"
+        networks:
+            - nginx-php74-postgres12-node
+
+    # node
+    node-service:
+        image: node:latest
+        container_name: node-container
+        volumes:
+            - ./app:/var/www/project
+        working_dir: /var/www/project
+        networks:
+            - nginx-php74-postgres12-node
